@@ -1,0 +1,59 @@
+from google.colab import files
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+
+uploaded = files.upload()
+
+df = pd.read_csv("fake_job_postings.csv")
+print("First 5 rows:")
+print(df.head())
+print("\nDataset info:")
+print(df.info())
+
+df = df.dropna(subset=["description"])
+df["text"] = df["title"] + " " + df["description"].fillna("")
+
+X = df["text"]
+y = df["fraudulent"]
+
+vectorizer = TfidfVectorizer(max_features=5000, stop_words="english", max_df=0.95, min_df=2)
+X_tfidf = vectorizer.fit_transform(X)
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X_tfidf, y, test_size=0.2, random_state=42, stratify=y
+)
+
+model = LogisticRegression()
+model.fit(X_train, y_train)
+
+y_pred = model.predict(X_test)
+
+print("\nModel Evaluation:")
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print("Precision:", precision_score(y_test, y_pred))
+print("Recall:", recall_score(y_test, y_pred))
+print("F1‑score:", f1_score(y_test, y_pred))
+
+def predict_job_scam(title, description):
+    text = title + " " + description
+    text_tfidf = vectorizer.transform([text])
+    prediction = model.predict(text_tfidf)[0]
+    proba = model.predict_proba(text_tfidf)[0]
+    if prediction == 1:
+        print(f" SUSPICIOUS / MAYBE SCAM (fake probability: {proba[1]:.2f})")
+    else:
+        print(f" LIKELY REAL / SAFE (fake probability: {proba[0]:.2f})")
+
+print("\nExample predictions:")
+predict_job_scam(
+    "Urgent hiring for fresher",
+    "You need to pay 2000 rs registration fee to join the company."
+)
+
+predict_job_scam(
+    "Software Engineer",
+    "Join a reputed tech company. No registration fee, fixed salary."
+)
