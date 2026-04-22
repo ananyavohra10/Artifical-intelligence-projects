@@ -1,0 +1,4 @@
+import qrcode
+qr = qrcode.make("https://www.instagram.com/?igsh=cmc4Ynk5Nzc2cXFq")
+qr.save("My_qrcode.png")
+print("qrcode generated successfully.")
